@@ -11,16 +11,12 @@ Puedes acceder a la API en la siguiente URL:
 
 ## Pruebas de la API
 
-Puedes probar las rutas de la API usando herramientas como Postman o el REST Client de VS Code. Asegúrate de probar las siguientes rutas:
+Puedes probar las rutas de la API usando Postman. Asegúrate de probar las siguientes rutas:
 
 - `GET /api/persons`: Obtener todos los contactos.
 - `POST /api/persons`: Crear un nuevo contacto.
 - `PUT /api/persons/:id`: Actualizar un contacto existente.
 - `DELETE /api/persons/:id`: Eliminar un contacto.
-
-## Observación de Logs
-
-Es importante monitorear los logs del despliegue en Render para detectar posibles errores. Esto puede hacerse desde el panel de control de Render.
 
 ## Instalación Local
 
