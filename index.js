@@ -82,6 +82,25 @@ app.get('/api/persons/:id', (request, response) => {
     .catch(error => next(error))
 })
 
+app.put('/api/persons/:id', (request, response, next) => {
+  const body = request.body
+
+  const person = {
+    name: body.name,
+    number: body.number
+  }
+
+  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+    .then(updatedPerson => {
+      if (updatedPerson) {
+        response.json(updatedPerson);
+      } else {
+        response.status(404).send({ error: 'Contact not found' });
+      }
+    })
+    .catch(error => next(error))
+})
+
 app.post('/api/persons', (request, response) => {
 
   const body = request.body
@@ -90,19 +109,27 @@ app.post('/api/persons', (request, response) => {
     return response.status(400).json({ error: 'Name or number is missing' })
   }
 
-  const person = new Person({
-    name: body.name,
-    number: body.number
-  })
+  Person.findOne({ name: body.name })
+    .then(existingPerson => {
+      if(existingPerson) {
 
-  const nameExists = persons.find(p => p.name === person.name)
-  if (nameExists) {
-    return response.status(409).json({ error: 'Name already exists in the phonebook' })
-  }
+        existingPerson.number = body.number;
+        existingPerson.save().then(updatedPerson => {
+          response.json(updatedPerson);
+        });
 
-  person.save().then(savedPerson => {
-    response.json(savedPerson)
-  })
+      } else {
+        const person = new Person({
+          name: body.name,
+          number: body.number
+        })
+
+        person.save().then(savedPerson => {
+          response.json(savedPerson)
+        })
+        .catch(error => next(error));
+      }
+    })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
