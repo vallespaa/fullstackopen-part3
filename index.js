@@ -82,22 +82,25 @@ app.get('/api/persons/:id', (request, response) => {
 
 app.post('/api/persons', (request, response) => {
 
-  const person = request.body
+  const body = request.body
 
-  if (! person.name || ! person.number) {
+  if (! body.name || ! body.number) {
     return response.status(400).json({ error: 'Name or number is missing' })
-
   }
+
+  const person = new Person({
+    name: body.name,
+    number: body.number
+  })
 
   const nameExists = persons.find(p => p.name === person.name)
   if (nameExists) {
     return response.status(409).json({ error: 'Name already exists in the phonebook' })
   }
 
-  person.id = Math.floor(Math.random() * 100000)
-  persons = persons.concat(person)
-
-  response.json(person)
+  person.save().then(savedPerson => {
+    response.json(savedPerson)
+  })
 })
 
 app.delete('/api/persons/:id', (request, response) => {
