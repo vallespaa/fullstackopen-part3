@@ -50,18 +50,18 @@ const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
 
-const info = () => {
-  const currentDateTime = new Date(); 
-  return `
-    <div>
-      <p>Phonebook has info for ${persons.length} people</p>
-      <p>${currentDateTime}</p>
-    </div>
-  `;
-};
-
 app.get('/info', (request, response) => {
-  response.send(info())
+  Person.countDocuments({})
+    .then(count => {
+      const currentDateTime = new Date();
+      response.send(`
+        <div>
+          <p>Phonebook has info for ${count} people</p>
+          <p>${currentDateTime}</p>
+        </div>
+      `);
+    })
+    .catch(error => next(error));
 })
 
 app.get('/api/persons', (request, response) => {
@@ -70,17 +70,18 @@ app.get('/api/persons', (request, response) => {
   })
 })
 
-app.get('/api/persons/:id', (request, response) => {
+app.get('/api/persons/:id', (request, response, next) => {
   Person.findById(request.params.id)
     .then(person => {
       if (person) {
         response.json(person)
       } else {
-        response.status(404).end() 
+        response.status(404).end()
       }
     })
     .catch(error => next(error))
 })
+
 
 app.put('/api/persons/:id', (request, response, next) => {
   const body = request.body
