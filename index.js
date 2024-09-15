@@ -6,29 +6,6 @@ const Person = require('./models/person')
 
 app.use(morgan('tiny'));
 
-let persons = [
-    { 
-      "id": 1,
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": 2,
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": 3,
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": 4,
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
-
 app.use(express.static('dist'))
 
 const requestLogger = (request, response, next) => {
@@ -39,10 +16,21 @@ const requestLogger = (request, response, next) => {
   next()
 }
 
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })  
+  }
+
+  next(error)
+}
+
 const cors = require('cors')
 
 app.use(cors())
-
 app.use(express.json())
 app.use(requestLogger)
 
@@ -84,31 +72,22 @@ app.get('/api/persons/:id', (request, response, next) => {
 
 
 app.put('/api/persons/:id', (request, response, next) => {
-  const body = request.body
+  const { name, number } = request.body
 
-  const person = {
-    name: body.name,
-    number: body.number
-  }
-
-  Person.findByIdAndUpdate(request.params.id, person, { new: true })
+  Person.findByIdAndUpdate(
+    request.params.id, 
+    { name , number }, 
+    { new: true, runValidators: true, context: 'query'}
+  )
     .then(updatedPerson => {
-      if (updatedPerson) {
-        response.json(updatedPerson);
-      } else {
-        response.status(404).send({ error: 'Contact not found' });
-      }
+      response.json(updatedPerson);
     })
     .catch(error => next(error))
 })
 
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
 
   const body = request.body
-
-  if (! body.name || ! body.number) {
-    return response.status(400).json({ error: 'Name or number is missing' })
-  }
 
   Person.findOne({ name: body.name })
     .then(existingPerson => {
@@ -133,7 +112,7 @@ app.post('/api/persons', (request, response) => {
     })
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
   Person.findByIdAndDelete(request.params.id)
     .then(result => {
       response.status(204).end()
@@ -141,16 +120,7 @@ app.delete('/api/persons/:id', (request, response) => {
     .catch(error => next(error))
 })
 
-const errorHandler = (error, request, response, next) => {
-  console.error(error.message)
-
-  if (error.name === 'CastError') {
-    return response.status(400).send({ error: 'malformatted id' })
-  } 
-
-  next(error)
-}
-
+app.use(unknownEndpoint)
 app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
